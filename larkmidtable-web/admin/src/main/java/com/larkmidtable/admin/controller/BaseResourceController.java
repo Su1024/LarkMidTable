@@ -9,31 +9,39 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/base/resource")
+@RequestMapping("/api/base/resource")
 @Api(tags = "基础建设-资源管理")
 public class BaseResourceController {
 
+	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	@Resource
 	private BaseResourceMapper baseResourceMapper;
 
 	@ApiOperation("获取所有数据")
 	@GetMapping("/list")
-	public ReturnT<List<BaseResource>> selectList(
+	public ReturnT<Map<String, Object>> selectList(
 			@RequestParam(value = "current", required = false, defaultValue = "1") int current,
-			@RequestParam(value = "size", required = false, defaultValue = "10") int size) {
+			@RequestParam(value = "size", required = false, defaultValue = "10") int size,
+			@RequestParam(value = "name", required = false) String name) {
 		// page list
-		List<BaseResource> list = baseResourceMapper.findAll();
-		return new ReturnT<>(list);
+		List<BaseResource> list = baseResourceMapper.findList((current - 1) * size,size,name);
+		Map<String, Object> maps = new HashMap<>();
+		maps.put("recordsTotal", list.size());    // 过滤后的总记录数
+		maps.put("data", list);                    // 分页列表
+		return new ReturnT<>(maps);
 	}
 
 	@ApiOperation("新增数据")
 	@PostMapping("/add")
 	public ReturnT<String> insert(HttpServletRequest request, @RequestBody BaseResource entity) {
-		entity.setUpdate_time(new Date().toString());
+		entity.setUpdate_time(sdf.format(new Date()));
 		this.baseResourceMapper.save(entity);
 		return ReturnT.SUCCESS;
 	}
@@ -41,7 +49,7 @@ public class BaseResourceController {
 	@ApiOperation("修改数据")
 	@PostMapping(value = "/update")
 	public ReturnT<String> update(@RequestBody BaseResource entity) {
-		entity.setUpdate_time(new Date().toString());
+		entity.setUpdate_time(sdf.format(new Date()));
 		baseResourceMapper.update(entity);
 		return ReturnT.SUCCESS;
 	}
